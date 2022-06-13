@@ -351,7 +351,7 @@ contract("PancakeZapV1", ([alice, bob, carol, david, erin]) => {
 
       const minTokenAmountOut = new BN(estimation[1].toString()).mul(new BN("9995")).div(new BN("10000"));
 
-      const result = await pancakeZap.zapOutToken(lpToken, tokenToReceive, lpTokenAmount, minTokenAmountOut, {
+      const result = await pancakeZap.zapOutToken(lpToken, tokenToReceive, lpTokenAmount, minTokenAmountOut, minTokenAmountOut, {
         from: carol,
       });
 
@@ -378,7 +378,7 @@ contract("PancakeZapV1", ([alice, bob, carol, david, erin]) => {
 
       const minTokenAmountOut = new BN(estimation[1].toString()).mul(new BN("9995")).div(new BN("10000"));
 
-      const result = await pancakeZap.zapOutBNB(lpToken, lpTokenAmount, minTokenAmountOut, {
+      const result = await pancakeZap.zapOutBNB(lpToken, lpTokenAmount, minTokenAmountOut, minTokenAmountOut, {
         from: carol,
       });
 
@@ -484,12 +484,12 @@ contract("PancakeZapV1", ([alice, bob, carol, david, erin]) => {
       );
 
       await expectRevert(
-        pancakeZap.zapOutToken(pairBC.address, tokenA.address, parseEther("0.51"), parseEther("0.51"), { from: carol }),
+        pancakeZap.zapOutToken(pairBC.address, tokenA.address, parseEther("0.51"), parseEther("0.51"), parseEther("0.51"), { from: carol }),
         "Zap: Token not in LP"
       );
 
       await expectRevert(
-        pancakeZap.zapOutBNB(pairAC.address, parseEther("0.51"), parseEther("0.51"), { from: carol }),
+        pancakeZap.zapOutBNB(pairAC.address, parseEther("0.51"), parseEther("0.51"), parseEther("0.51"), { from: carol }),
         "Zap: Token not in LP"
       );
 

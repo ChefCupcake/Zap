@@ -246,13 +246,14 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
     function zapOutBNB(
         address _lpToken,
         uint256 _lpTokenAmount,
-        uint256 _tokenAmountOutMin
+        uint256 _tokenAmountOutMin,
+        uint256 _totalTokenAmountOutMin
     ) external nonReentrant {
         // Transfer LP token to this address
         IERC20(_lpToken).safeTransferFrom(msg.sender, address(_lpToken), _lpTokenAmount);
 
         // Call zapOut
-        uint256 tokenAmountToTransfer = _zapOut(_lpToken, WBNBAddress, _tokenAmountOutMin);
+        uint256 tokenAmountToTransfer = _zapOut(_lpToken, WBNBAddress, _tokenAmountOutMin, _totalTokenAmountOutMin);
 
         // Unwrap BNB
         WBNB.withdraw(tokenAmountToTransfer);
@@ -282,12 +283,13 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
         address _lpToken,
         address _tokenToReceive,
         uint256 _lpTokenAmount,
-        uint256 _tokenAmountOutMin
+        uint256 _tokenAmountOutMin,
+        uint256 _totalTokenAmountOutMin
     ) external nonReentrant {
         // Transfer LP token to this address
         IERC20(_lpToken).safeTransferFrom(msg.sender, address(_lpToken), _lpTokenAmount);
 
-        uint256 tokenAmountToTransfer = _zapOut(_lpToken, _tokenToReceive, _tokenAmountOutMin);
+        uint256 tokenAmountToTransfer = _zapOut(_lpToken, _tokenToReceive, _tokenAmountOutMin, _totalTokenAmountOutMin);
 
         IERC20(_tokenToReceive).safeTransfer(msg.sender, tokenAmountToTransfer);
 
@@ -696,7 +698,8 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
     function _zapOut(
         address _lpToken,
         address _tokenToReceive,
-        uint256 _tokenAmountOutMin
+        uint256 _tokenAmountOutMin,
+        uint256 _totalTokenAmountOutMin
     ) internal returns (uint256) {
         address token0 = IPancakePair(_lpToken).token0();
         address token1 = IPancakePair(_lpToken).token1();
@@ -732,6 +735,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
         pancakeRouter.swapExactTokensForTokens(swapAmountIn, _tokenAmountOutMin, path, address(this), block.timestamp);
 
         // Return full balance for the token to receive by the sender
+        require(_totalTokenAmountOutMin < IERC20(_tokenToReceive).balanceOf(address(this)), "amount is not enough");
         return IERC20(_tokenToReceive).balanceOf(address(this));
     }
 
