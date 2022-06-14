@@ -539,7 +539,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
         }
 
         // Approve token to zap if necessary
-        _approveTokenIfNeeded(_tokenToZap);
+        _approveTokenIfNeeded(_tokenToZap, swapAmountIn);
 
         uint256[] memory swapedAmounts = pancakeRouter.swapExactTokensForTokens(
             swapAmountIn,
@@ -551,9 +551,9 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
 
         // Approve other token if necessary
         if (token0 == _tokenToZap) {
-            _approveTokenIfNeeded(token1);
+            _approveTokenIfNeeded(token1, swapAmountIn);
         } else {
-            _approveTokenIfNeeded(token0);
+            _approveTokenIfNeeded(token0, swapAmountIn);
         }
 
         // Add liquidity and retrieve the amount of LP received by the sender
@@ -642,11 +642,11 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
         if (_isToken0Sold) {
             path[0] = _token0ToZap;
             path[1] = _token1ToZap;
-            _approveTokenIfNeeded(_token0ToZap);
+            _approveTokenIfNeeded(_token0ToZap, swapAmountIn);
         } else {
             path[0] = _token1ToZap;
             path[1] = _token0ToZap;
-            _approveTokenIfNeeded(_token1ToZap);
+            _approveTokenIfNeeded(_token1ToZap, swapAmountIn);
         }
 
         // Execute the swap and retrieve quantity received
@@ -660,7 +660,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
 
         // Check whether to approve other token and add liquidity to LP
         if (_isToken0Sold) {
-            _approveTokenIfNeeded(_token1ToZap);
+            _approveTokenIfNeeded(_token1ToZap, swapAmountIn);
 
             (, , lpTokenReceived) = pancakeRouter.addLiquidity(
                 path[0],
@@ -673,7 +673,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
                 block.timestamp
             );
         } else {
-            _approveTokenIfNeeded(_token0ToZap);
+            _approveTokenIfNeeded(_token0ToZap, swapAmountIn);
             (, , lpTokenReceived) = pancakeRouter.addLiquidity(
                 path[0],
                 path[1],
@@ -722,13 +722,13 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
             swapAmountIn = IERC20(token1).balanceOf(address(this));
 
             // Approve token to sell if necessary
-            _approveTokenIfNeeded(token1);
+            _approveTokenIfNeeded(token1, swapAmountIn);
         } else {
             path[0] = token0;
             swapAmountIn = IERC20(token0).balanceOf(address(this));
 
             // Approve token to sell if necessary
-            _approveTokenIfNeeded(token0);
+            _approveTokenIfNeeded(token0, swapAmountIn);
         }
 
         // Swap tokens
@@ -743,8 +743,8 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
      * @notice Allows to zap a token in (e.g. token/other token)
      * @param _token: token address
      */
-    function _approveTokenIfNeeded(address _token) private {
-        if (IERC20(_token).allowance(address(this), pancakeRouterAddress) < 1e24) {
+    function _approveTokenIfNeeded(address _token, uint256 _swapAmountIn) private {
+        if (IERC20(_token).allowance(address(this), pancakeRouterAddress) < _swapAmountIn) {
             // Reset to 0
             IERC20(_token).safeApprove(pancakeRouterAddress, 0);
             // Re-approve
