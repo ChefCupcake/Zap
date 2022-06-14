@@ -477,7 +477,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
             // sell token0
             uint256 tokenAmountIn = (_lpTokenAmount * reserveA) / IPancakePair(_lpToken).totalSupply();
 
-            swapAmountIn = _calculateAmountToSwap(tokenAmountIn, reserveA, reserveB);
+            swapAmountIn = _calculateAmountToSwapForOut(tokenAmountIn, reserveA, reserveB);
             swapAmountOut = pancakeRouter.getAmountOut(swapAmountIn, reserveA, reserveB);
 
             swapTokenOut = token0;
@@ -485,7 +485,7 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
             // sell token1
             uint256 tokenAmountIn = (_lpTokenAmount * reserveB) / IPancakePair(_lpToken).totalSupply();
 
-            swapAmountIn = _calculateAmountToSwap(tokenAmountIn, reserveB, reserveA);
+            swapAmountIn = _calculateAmountToSwapForOut(tokenAmountIn, reserveB, reserveA);
             swapAmountOut = pancakeRouter.getAmountOut(swapAmountIn, reserveB, reserveA);
 
             swapTokenOut = token1;
@@ -840,6 +840,34 @@ contract PancakeZapV1 is Ownable, ReentrancyGuard {
                 token1AmountToSell -
                 Babylonian.sqrt((token1AmountToSell * token1AmountToSell * nominator) / denominator);
         }
+
+        return amountToSwap;
+    }
+
+    /*
+     * @notice Calculate the swap amount to get the price at 50/50 split
+     * @param _token0AmountIn: amount of token 0
+     * @param _reserve0: amount in reserve for token0
+     * @param _reserve1: amount in reserve for token1
+     * @return amountToSwap: swapped amount (in token0)
+     */
+    function _calculateAmountToSwapForOut(
+        uint256 _token0AmountIn,
+        uint256 _reserve0,
+        uint256 _reserve1
+    ) private view returns (uint256 amountToSwap) {
+        uint256 token0Amount = _token0AmountIn;
+        uint256 nominator = pancakeRouter.getAmountOut(token0Amount, _reserve0, _reserve1);
+        uint256 denominator = pancakeRouter.quote(
+            token0Amount,
+            _reserve0 + token0Amount,
+            _reserve1 - nominator
+        );
+
+        // Adjustment for price impact
+        amountToSwap =
+            _token0AmountIn -
+            Babylonian.sqrt((token0Amount * token0Amount * nominator) / denominator);
 
         return amountToSwap;
     }
